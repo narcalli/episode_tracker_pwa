@@ -3,8 +3,7 @@ import { Milestone } from '../types/episode';
 import { 
   CheckCircle2, 
   Clock, 
-  AlertCircle, 
-  FileText
+  AlertCircle
 } from 'lucide-react';
 
 interface CompactMilestoneTileProps {
@@ -20,10 +19,6 @@ export const CompactMilestoneTile: React.FC<CompactMilestoneTileProps> = ({
   const isDueNow = milestone.status === 'due_now';
   const isWindowClosed = milestone.status === 'window_closed';
 
-  // Extract short stage number or code (e.g., "S1", "S2")
-  const stageNumMatch = milestone.stageName.match(/Stage (\d+)/i);
-  const stageCode = stageNumMatch ? `Stage ${stageNumMatch[1]}` : milestone.stageName;
-
   return (
     <button
       type="button"
@@ -38,17 +33,8 @@ export const CompactMilestoneTile: React.FC<CompactMilestoneTileProps> = ({
           : 'bg-white border-slate-200/90 hover:border-slate-300 shadow-2xs'
       }`}
     >
-      {/* Top micro row: Stage & Status indicator */}
-      <div className="flex items-center justify-between gap-1 w-full mb-1">
-        <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-          isDueNow
-            ? 'bg-rose-200/80 text-rose-800'
-            : isCompleted
-            ? 'bg-emerald-200/80 text-emerald-800'
-            : 'bg-slate-100 text-slate-600'
-        }`}>
-          {stageCode}
-        </span>
+      {/* Top micro row: status indicator */}
+      <div className="flex items-center justify-end gap-1 w-full mb-1">
 
         {/* Status Icon */}
         <div className="shrink-0">
@@ -80,21 +66,18 @@ export const CompactMilestoneTile: React.FC<CompactMilestoneTileProps> = ({
         {milestone.name}
       </h4>
 
-      {/* Bottom micro row: Prep tags or report ready */}
+      {/* Bottom micro row: where it stands */}
       <div className="flex items-center space-x-1.5 mt-1 text-[10px] text-slate-500 font-medium truncate w-full">
-        {isCompleted && milestone.reportAvailable ? (
-          <span className="inline-flex items-center text-emerald-700 font-semibold truncate">
-            <FileText className="w-2.5 h-2.5 mr-0.5 text-emerald-600" />
-            Report ready
-          </span>
+        {isCompleted ? (
+          <span className="text-emerald-700 font-semibold truncate">{milestone.completedDate ? `Done ${milestone.completedDate}` : 'Done'}</span>
         ) : isDueNow ? (
-          <span className="text-rose-700 font-bold truncate">
-            {milestone.fastingRequired ? 'Fasting needed' : milestone.fullBladderRequired ? 'Full bladder' : 'Action needed'}
-          </span>
+          <span className="text-rose-700 font-bold truncate">{milestone.windowEnd ? `Due by ${milestone.windowEnd}` : 'Due now'}</span>
+        ) : isWindowClosed ? (
+          <span className="text-slate-400 truncate">Window closed</span>
+        ) : milestone.booked ? (
+          <span className="text-sky-700 font-semibold truncate">Booked</span>
         ) : (
-          <span className="text-slate-400 truncate">
-            {milestone.category.replace('_', ' ')}
-          </span>
+          <span className="text-slate-400 truncate">{milestone.windowStart ? `Opens ${milestone.windowStart}` : 'Coming up'}</span>
         )}
       </div>
     </button>

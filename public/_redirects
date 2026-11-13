@@ -1,0 +1,4 @@
+# The app calls /api on its own domain; Netlify forwards it to the Patient 360 API behind the portal, so the browser stays
+# same-origin and the session cookie is set for this site. The first matching rule wins: keep /api above the catch-all.
+/api/*  https://my.ovumhospitals.com/api/:splat  200
+/*      /index.html  200

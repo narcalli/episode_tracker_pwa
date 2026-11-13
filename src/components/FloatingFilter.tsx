@@ -4,7 +4,6 @@ import { MilestoneStatus } from '../types/episode';
 import { 
   SlidersHorizontal, 
   X, 
-  Check, 
   RotateCcw,
   CheckCircle2,
   Clock
@@ -15,28 +14,19 @@ export const FloatingFilter: React.FC = () => {
   const { 
     filterStatus, 
     setFilterStatus, 
-    selectedStageId, 
-    setSelectedStageId, 
-    stages,
-    stats,
-    setSelectedCategory
+    stats
   } = useEpisode();
 
-  const activeFiltersCount = 
-    (filterStatus !== 'all' ? 1 : 0) + 
-    (selectedStageId !== 'all' ? 1 : 0);
+  const activeFiltersCount = filterStatus !== 'all' ? 1 : 0;
 
-  const handleReset = () => {
-    setFilterStatus('all');
-    setSelectedStageId('all');
-    setSelectedCategory('all');
-  };
+  const handleReset = () => setFilterStatus('all');
 
   const statusOptions: { id: 'all' | MilestoneStatus; label: string; count: number; badgeColor: string }[] = [
     { id: 'all', label: 'All Milestones', count: stats.total, badgeColor: 'bg-slate-100 text-slate-700' },
     { id: 'due_now', label: 'Due Now', count: stats.dueNow, badgeColor: 'bg-rose-100 text-rose-800 font-bold' },
     { id: 'completed', label: 'Completed', count: stats.completed, badgeColor: 'bg-emerald-100 text-emerald-800 font-bold' },
     { id: 'upcoming', label: 'Next / What Lies Ahead', count: stats.upcoming, badgeColor: 'bg-sky-100 text-sky-800' },
+    { id: 'window_closed', label: 'Window closed', count: stats.windowClosed, badgeColor: 'bg-slate-200 text-slate-700' },
   ];
 
   return (
@@ -97,7 +87,7 @@ export const FloatingFilter: React.FC = () => {
               {/* Status Section */}
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
-                  Status (Due / Completed / Next)
+                  Status
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {statusOptions.map(opt => {
@@ -130,64 +120,12 @@ export const FloatingFilter: React.FC = () => {
                 </div>
               </div>
 
-              {/* Stage Section */}
-              <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
-                  Gestational Stage
-                </label>
-                <div className="space-y-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedStageId('all')}
-                    className={`w-full text-left p-2.5 rounded-xl border text-xs font-medium transition flex items-center justify-between ${
-                      selectedStageId === 'all'
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                        : 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-800'
-                    }`}
-                  >
-                    <span>All Stages (Full Stream)</span>
-                    {selectedStageId === 'all' && <Check className="w-4 h-4 text-emerald-400" />}
-                  </button>
-
-                  {stages.map(stage => {
-                    const isSelected = selectedStageId === stage.id;
-                    const stageMilestonesCount = stage.milestones.length;
-                    return (
-                      <button
-                        key={stage.id}
-                        type="button"
-                        onClick={() => setSelectedStageId(stage.id)}
-                        className={`w-full text-left p-2.5 rounded-xl border text-xs font-medium transition flex items-center justify-between ${
-                          isSelected
-                            ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                            : 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-800'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-2 truncate">
-                          <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
-                            isSelected ? 'bg-slate-800 text-emerald-400' : 'bg-slate-200 text-slate-700'
-                          }`}>
-                            {stage.stageNumber}
-                          </span>
-                          <span className="truncate font-semibold">{stage.title.split(' - ')[1] || stage.title}</span>
-                          <span className="text-[11px] text-slate-400">({stage.weekRange})</span>
-                        </div>
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded shrink-0 ${
-                          isSelected ? 'bg-slate-800 text-slate-200' : 'bg-slate-200 text-slate-700'
-                        }`}>
-                          {stageMilestonesCount}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
             </div>
 
             {/* Footer */}
             <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
               <span className="text-xs text-slate-500">
-                {activeFiltersCount > 0 ? `${activeFiltersCount} filter(s) active` : 'Showing all 26 milestones'}
+                {activeFiltersCount > 0 ? `${activeFiltersCount} filter(s) active` : `Showing all ${stats.total} milestones`}
               </span>
               <button
                 type="button"

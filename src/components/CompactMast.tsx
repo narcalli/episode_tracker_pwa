@@ -5,13 +5,7 @@ import { Calendar } from 'lucide-react';
 
 export const CompactMast: React.FC = () => {
   const { patient } = useAuth();
-  const { stats } = useEpisode();
-
-  const formattedEdd = new Date(patient.edd).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  });
+  const { stats, edd } = useEpisode();
 
   return (
     <div 
@@ -31,10 +25,12 @@ export const CompactMast: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center space-x-1.5 bg-black/15 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-white/15 text-xs font-semibold">
-          <Calendar className="w-3.5 h-3.5 text-emerald-200 shrink-0" />
-          <span>ETD: <strong className="text-white font-bold">{formattedEdd}</strong></span>
-        </div>
+        {edd && (
+          <div className="flex items-center space-x-1.5 bg-black/15 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-white/15 text-xs font-semibold">
+            <Calendar className="w-3.5 h-3.5 text-emerald-200 shrink-0" />
+            <span>ETD: <strong className="text-white font-bold">{edd}</strong></span>
+          </div>
+        )}
       </div>
 
       {/* Row 2: Progress Bar & Status */}

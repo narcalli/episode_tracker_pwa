@@ -1,74 +1,22 @@
 export type MilestoneStatus = 'completed' | 'due_now' | 'upcoming' | 'window_closed';
 
-export type MilestoneCategory = 
-  | 'ultrasound'     // USG scans
-  | 'blood_test'     // CBC, TSH, Double Marker, etc.
-  | 'counselling'    // Diet, Lactation, Physiotherapy
-  | 'clinical_exam'  // Urine routine, VDRL, RBS
-  | 'procedure';     // IV injection
-
+/** A milestone as the screens show it (made from the API's EpisodeItem by the episode context). Dates are already formatted. */
 export interface Milestone {
   id: string;
   name: string;
-  shortCode?: string;
-  category: MilestoneCategory;
   status: MilestoneStatus;
-  stageId: string;
-  stageName: string;
-  windowStart: string;
-  windowEnd: string;
-  completedDate?: string;
-  
-  // Patient Guidance & Clinical Context
-  description: string;
-  whyItMatters: string;
-  instructions?: string[];
-  fastingRequired?: boolean;
-  fullBladderRequired?: boolean;
-  approxDurationMinutes?: number;
-  
-  // Results & Clinical Data
-  reportAvailable?: boolean;
-  reportSummary?: string;
-  doctorNotes?: string;
-  careProvider?: string;
-  facility?: string;
+  /** An appointment is booked (status stays 'upcoming'). */
+  booked: boolean;
+  windowStart: string | null;
+  windowEnd: string | null;
+  completedDate: string | null;
 }
 
-export interface Stage {
-  id: string;
-  stageNumber: number;
-  title: string;
-  weekRange: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-  milestones: Milestone[];
-}
-
+/** The patient whose journey is open: from the sign-in session. */
 export interface PatientProfile {
   id: string;
   name: string;
+  /** The patient code the hospital knows them by. */
   mrn: string;
   phone: string;
-  email: string;
-  age: number;
-  edd: string; // Estimated Due Date
-  currentWeek: number;
-  currentDay: number;
-  episodeName: string;
-  packageType: string;
-  careCenter: string;
-  assignedDoctor: string;
-  careCoordinator: string;
-  authToken?: string;
-}
-
-export interface EpisodeSummary {
-  totalMilestones: number;
-  completedMilestones: number;
-  dueNowMilestones: number;
-  upcomingMilestones: number;
-  windowClosedMilestones: number;
-  progressPercentage: number;
 }

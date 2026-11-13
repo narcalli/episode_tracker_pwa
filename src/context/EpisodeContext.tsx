@@ -1,278 +1,89 @@
-import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
-import { Stage, Milestone, MilestoneStatus, MilestoneCategory } from '../types/episode';
-import { defaultStagesData } from '../data/maternityEpisodeData';
-import { useAuth } from './AuthContext';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Milestone, MilestoneStatus } from '../types/episode';
+import { api, type EpisodeItem, type PatientEpisode } from '../lib/api';
+
+/** 'empty': signed in, but nothing set up for this patient yet. 'error': the hospital's server could not give it. */
+export type EpisodeLoad = 'loading' | 'ready' | 'empty' | 'error';
 
 interface EpisodeContextType {
-  stages: Stage[];
+  load: EpisodeLoad;
+  reload: () => Promise<void>;
+  /** The patient's expected delivery date, formatted; null when the hospital has not set one. */
+  edd: string | null;
   allMilestones: Milestone[];
-  completedList: Milestone[];
-  dueNowList: Milestone[];
-  upcomingList: Milestone[];
-  windowClosedList: Milestone[];
-  stats: {
-    total: number;
-    completed: number;
-    dueNow: number;
-    upcoming: number;
-    windowClosed: number;
-    progressPercent: number;
-  };
+  stats: { total: number; completed: number; dueNow: number; upcoming: number; windowClosed: number; progressPercent: number };
   filterStatus: 'all' | MilestoneStatus;
   setFilterStatus: (filter: 'all' | MilestoneStatus) => void;
-  selectedStageId: 'all' | string;
-  setSelectedStageId: (stageId: 'all' | string) => void;
-  selectedCategory: 'all' | MilestoneCategory;
-  setSelectedCategory: (cat: 'all' | MilestoneCategory) => void;
-  searchQuery: string;
-  setSearchQuery: (q: string) => void;
   filteredMilestones: Milestone[];
   selectedMilestone: Milestone | null;
   setSelectedMilestone: (m: Milestone | null) => void;
-  markMilestoneCompleted: (id: string, notes?: string) => void;
-  activeStageNumber: number;
-  setActiveStageNumber: (num: number) => void;
 }
 
 const EpisodeContext = createContext<EpisodeContextType | undefined>(undefined);
 
+/** YYYY-MM-DD as the patient reads it (the API sends calendar days, so no time zone moves them). */
+const formatDay = (d: string | null): string | null =>
+  d ? new Date(`${d}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : null;
+
+const STATUS: Record<EpisodeItem['state'], MilestoneStatus> = { DONE: 'completed', DUE: 'due_now', BOOKED: 'upcoming', UPCOMING: 'upcoming', MISSED: 'window_closed' };
+
+const toMilestone = (i: EpisodeItem): Milestone => ({
+  id: i.id,
+  name: i.title,
+  status: STATUS[i.state],
+  booked: i.state === 'BOOKED',
+  windowStart: formatDay(i.opensOn),
+  windowEnd: formatDay(i.dueBy),
+  completedDate: formatDay(i.completedOn),
+});
+
+/** Opening the app again after this long fetches fresh milestones. */
+const STALE_MS = 60_000;
+
 export const EpisodeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { activeScenario } = useAuth();
-
-  // Generate stage data based on activeScenario
-  const [stages, setStages] = useState<Stage[]>(() => {
-    return defaultStagesData;
-  });
-
+  const [load, setLoad] = useState<EpisodeLoad>('loading');
+  const [episode, setEpisode] = useState<PatientEpisode | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | MilestoneStatus>('all');
-  const [selectedStageId, setSelectedStageId] = useState<'all' | string>('all');
-  const [selectedCategory, setSelectedCategory] = useState<'all' | MilestoneCategory>('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
-  const [activeStageNumber, setActiveStageNumber] = useState<number>(2);
+  const fetchedAt = useRef(0);
 
-  // When scenario changes, adjust milestone statuses accordingly
-  useEffect(() => {
-    if (activeScenario === 'snapshot_closed') {
-      // Replicate the exact snapshot where all are marked "Window closed"
-      setStages(prev =>
-        prev.map(stage => ({
-          ...stage,
-          milestones: stage.milestones.map(m => ({
-            ...m,
-            status: 'window_closed' as MilestoneStatus
-          }))
-        }))
-      );
-      setActiveStageNumber(1);
-    } else if (activeScenario === 'trimester_1_active') {
-      setStages(prev =>
-        prev.map(stage => {
-          if (stage.stageNumber === 1) {
-            return {
-              ...stage,
-              milestones: stage.milestones.map((m, idx) => ({
-                ...m,
-                status: idx < 4 ? 'completed' : 'due_now'
-              }))
-            };
-          } else {
-            return {
-              ...stage,
-              milestones: stage.milestones.map(m => ({
-                ...m,
-                status: 'upcoming' as MilestoneStatus
-              }))
-            };
-          }
-        })
-      );
-      setActiveStageNumber(1);
-    } else if (activeScenario === 'trimester_2_active') {
-      // Stage 1 completed, Stage 2 due now, Stage 3-5 upcoming
-      setStages(prev =>
-        prev.map(stage => {
-          if (stage.stageNumber === 1) {
-            return {
-              ...stage,
-              milestones: stage.milestones.map(m => ({
-                ...m,
-                status: 'completed' as MilestoneStatus,
-                completedDate: m.completedDate || '28 Feb 2026',
-                reportAvailable: true
-              }))
-            };
-          } else if (stage.stageNumber === 2) {
-            return {
-              ...stage,
-              milestones: stage.milestones.map(m => ({
-                ...m,
-                status: 'due_now' as MilestoneStatus
-              }))
-            };
-          } else {
-            return {
-              ...stage,
-              milestones: stage.milestones.map(m => ({
-                ...m,
-                status: 'upcoming' as MilestoneStatus
-              }))
-            };
-          }
-        })
-      );
-      setActiveStageNumber(2);
-    } else if (activeScenario === 'trimester_3_active') {
-      setStages(prev =>
-        prev.map(stage => {
-          if (stage.stageNumber < 5) {
-            return {
-              ...stage,
-              milestones: stage.milestones.map(m => ({
-                ...m,
-                status: 'completed' as MilestoneStatus,
-                reportAvailable: true
-              }))
-            };
-          } else {
-            return {
-              ...stage,
-              milestones: stage.milestones.map(m => ({
-                ...m,
-                status: 'due_now' as MilestoneStatus
-              }))
-            };
-          }
-        })
-      );
-      setActiveStageNumber(5);
+  const reload = useCallback(async () => {
+    try {
+      const { episodes } = await api.get<{ episodes: PatientEpisode[] }>('/patient/episodes');
+      fetchedAt.current = Date.now();
+      // The API puts the open episode first.
+      const current = episodes[0] ?? null;
+      setEpisode(current);
+      setLoad(current ? 'ready' : 'empty');
+    } catch {
+      // Keep what is on screen if there is something; only a first load shows the error.
+      setLoad((was) => (was === 'ready' ? was : 'error'));
     }
-  }, [activeScenario]);
+  }, []);
 
-  const allMilestones = useMemo(() => {
-    return stages.flatMap(s => s.milestones);
-  }, [stages]);
+  useEffect(() => {
+    void reload();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && Date.now() - fetchedAt.current > STALE_MS) void reload();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [reload]);
 
-  const completedList = useMemo(() => {
-    return allMilestones.filter(m => m.status === 'completed');
-  }, [allMilestones]);
-
-  const dueNowList = useMemo(() => {
-    return allMilestones.filter(m => m.status === 'due_now');
-  }, [allMilestones]);
-
-  const upcomingList = useMemo(() => {
-    return allMilestones.filter(m => m.status === 'upcoming');
-  }, [allMilestones]);
-
-  const windowClosedList = useMemo(() => {
-    return allMilestones.filter(m => m.status === 'window_closed');
-  }, [allMilestones]);
+  const allMilestones = useMemo(() => (episode?.items ?? []).map(toMilestone), [episode]);
 
   const stats = useMemo(() => {
+    const count = (s: MilestoneStatus) => allMilestones.filter((m) => m.status === s).length;
     const total = allMilestones.length;
-    const completed = completedList.length;
-    const dueNow = dueNowList.length;
-    const upcoming = upcomingList.length;
-    const windowClosed = windowClosedList.length;
-    const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const completed = count('completed');
+    return { total, completed, dueNow: count('due_now'), upcoming: count('upcoming'), windowClosed: count('window_closed'), progressPercent: total > 0 ? Math.round((completed / total) * 100) : 0 };
+  }, [allMilestones]);
 
-    return {
-      total,
-      completed,
-      dueNow,
-      upcoming,
-      windowClosed,
-      progressPercent
-    };
-  }, [allMilestones, completedList, dueNowList, upcomingList, windowClosedList]);
-
-  const markMilestoneCompleted = (id: string, notes?: string) => {
-    const todayStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    setStages(prev =>
-      prev.map(stage => ({
-        ...stage,
-        milestones: stage.milestones.map(m => {
-          if (m.id === id) {
-            return {
-              ...m,
-              status: 'completed' as MilestoneStatus,
-              completedDate: todayStr,
-              reportAvailable: true,
-              reportSummary: notes || 'Encounter concluded. Test report verified and uploaded by attending care team.',
-              doctorNotes: notes || m.doctorNotes || 'Parameters reviewed and within standard physiological limits.'
-            };
-          }
-          return m;
-        })
-      }))
-    );
-
-    // Also update selectedMilestone if open
-    setSelectedMilestone(prev => {
-      if (prev && prev.id === id) {
-        return {
-          ...prev,
-          status: 'completed',
-          completedDate: todayStr,
-          reportAvailable: true
-        };
-      }
-      return prev;
-    });
-  };
-
-  const filteredMilestones = useMemo(() => {
-    return allMilestones.filter(m => {
-      // Status filter
-      if (filterStatus !== 'all' && m.status !== filterStatus) {
-        return false;
-      }
-      // Stage filter
-      if (selectedStageId !== 'all' && m.stageId !== selectedStageId) {
-        return false;
-      }
-      // Category filter
-      if (selectedCategory !== 'all' && m.category !== selectedCategory) {
-        return false;
-      }
-      // Search query
-      if (searchQuery.trim() !== '') {
-        const q = searchQuery.toLowerCase();
-        const matchesName = m.name.toLowerCase().includes(q);
-        const matchesStage = m.stageName.toLowerCase().includes(q);
-        const matchesDesc = m.description.toLowerCase().includes(q);
-        return matchesName || matchesStage || matchesDesc;
-      }
-      return true;
-    });
-  }, [allMilestones, filterStatus, selectedStageId, selectedCategory, searchQuery]);
+  const filteredMilestones = useMemo(() => allMilestones.filter((m) => filterStatus === 'all' || m.status === filterStatus), [allMilestones, filterStatus]);
 
   return (
     <EpisodeContext.Provider
-      value={{
-        stages,
-        allMilestones,
-        completedList,
-        dueNowList,
-        upcomingList,
-        windowClosedList,
-        stats,
-        filterStatus,
-        setFilterStatus,
-        selectedStageId,
-        setSelectedStageId,
-        selectedCategory,
-        setSelectedCategory,
-        searchQuery,
-        setSearchQuery,
-        filteredMilestones,
-        selectedMilestone,
-        setSelectedMilestone,
-        markMilestoneCompleted,
-        activeStageNumber,
-        setActiveStageNumber
-      }}
+      value={{ load, reload, edd: formatDay(episode?.expectedDeliveryDate ?? null), allMilestones, stats, filterStatus, setFilterStatus, filteredMilestones, selectedMilestone, setSelectedMilestone }}
     >
       {children}
     </EpisodeContext.Provider>
@@ -281,8 +92,6 @@ export const EpisodeProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 export const useEpisode = () => {
   const context = useContext(EpisodeContext);
-  if (!context) {
-    throw new Error('useEpisode must be used within an EpisodeProvider');
-  }
+  if (!context) throw new Error('useEpisode must be used within an EpisodeProvider');
   return context;
 };
