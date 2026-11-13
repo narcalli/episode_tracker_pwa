@@ -8,7 +8,11 @@ export type EpisodeLoad = 'loading' | 'ready' | 'empty' | 'error';
 interface EpisodeContextType {
   load: EpisodeLoad;
   reload: () => Promise<void>;
-  /** The patient's expected delivery date, formatted; null when the hospital has not set one. */
+  /** Every episode the patient has, current one first, in the words the picker shows. */
+  episodes: EpisodeOption[];
+  selectedEpisodeId: string | null;
+  selectEpisode: (id: string) => void;
+  /** The open episode's expected delivery date, formatted; null when the hospital has not set one. */
   edd: string | null;
   allMilestones: Milestone[];
   stats: { total: number; completed: number; dueNow: number; upcoming: number; windowClosed: number; progressPercent: number };
@@ -17,6 +21,14 @@ interface EpisodeContextType {
   filteredMilestones: Milestone[];
   selectedMilestone: Milestone | null;
   setSelectedMilestone: (m: Milestone | null) => void;
+}
+
+export interface EpisodeOption {
+  id: string;
+  /** "Current" for the open episode, otherwise "Completed". */
+  label: string;
+  startedOn: string | null;
+  edd: string | null;
 }
 
 const EpisodeContext = createContext<EpisodeContextType | undefined>(undefined);
@@ -42,7 +54,8 @@ const STALE_MS = 60_000;
 
 export const EpisodeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [load, setLoad] = useState<EpisodeLoad>('loading');
-  const [episode, setEpisode] = useState<PatientEpisode | null>(null);
+  const [allEpisodes, setAllEpisodes] = useState<PatientEpisode[]>([]);
+  const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | MilestoneStatus>('all');
   const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
   const fetchedAt = useRef(0);
@@ -51,10 +64,10 @@ export const EpisodeProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const { episodes } = await api.get<{ episodes: PatientEpisode[] }>('/patient/episodes');
       fetchedAt.current = Date.now();
-      // The API puts the open episode first.
-      const current = episodes[0] ?? null;
-      setEpisode(current);
-      setLoad(current ? 'ready' : 'empty');
+      // The API puts the open episode first. Keep the one being looked at if it is still there.
+      setAllEpisodes(episodes);
+      setSelectedEpisodeId((was) => (was && episodes.some((e) => e.id === was) ? was : (episodes[0]?.id ?? null)));
+      setLoad(episodes.length > 0 ? 'ready' : 'empty');
     } catch {
       // Keep what is on screen if there is something; only a first load shows the error.
       setLoad((was) => (was === 'ready' ? was : 'error'));
@@ -70,6 +83,18 @@ export const EpisodeProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [reload]);
 
+  const episode = useMemo(() => allEpisodes.find((e) => e.id === selectedEpisodeId) ?? allEpisodes[0] ?? null, [allEpisodes, selectedEpisodeId]);
+
+  const episodes = useMemo<EpisodeOption[]>(
+    () => allEpisodes.map((e) => ({ id: e.id, label: e.status === 'ACTIVE' ? 'Current' : 'Completed', startedOn: formatDay(e.startedAt), edd: formatDay(e.expectedDeliveryDate) })),
+    [allEpisodes],
+  );
+
+  const selectEpisode = useCallback((id: string) => {
+    setSelectedEpisodeId(id);
+    setSelectedMilestone(null);
+  }, []);
+
   const allMilestones = useMemo(() => (episode?.items ?? []).map(toMilestone), [episode]);
 
   const stats = useMemo(() => {
@@ -83,7 +108,7 @@ export const EpisodeProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   return (
     <EpisodeContext.Provider
-      value={{ load, reload, edd: formatDay(episode?.expectedDeliveryDate ?? null), allMilestones, stats, filterStatus, setFilterStatus, filteredMilestones, selectedMilestone, setSelectedMilestone }}
+      value={{ load, reload, episodes, selectedEpisodeId: episode?.id ?? null, selectEpisode, edd: formatDay(episode?.expectedDeliveryDate ?? null), allMilestones, stats, filterStatus, setFilterStatus, filteredMilestones, selectedMilestone, setSelectedMilestone }}
     >
       {children}
     </EpisodeContext.Provider>

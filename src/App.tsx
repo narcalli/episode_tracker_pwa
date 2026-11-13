@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { EpisodeProvider, useEpisode } from './context/EpisodeContext';
 import { CompactMast } from './components/CompactMast';
+import { EpisodePicker } from './components/EpisodePicker';
 import { CompactMilestoneTile } from './components/CompactMilestoneTile';
 import { MilestoneModal } from './components/MilestoneModal';
 import { FloatingFilter } from './components/FloatingFilter';
@@ -54,6 +55,8 @@ const EpisodeTrackerMain: React.FC = () => {
       <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-3 sm:pt-4">
         {/* Main Mast: Patient Name, Progress Bar, and ETD only */}
         <CompactMast />
+
+        {load === 'ready' && <EpisodePicker />}
 
         {/* Active Filter Notification Pill (if filtered) */}
         {isFiltered && (
