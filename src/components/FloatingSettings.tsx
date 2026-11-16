@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useEpisode } from '../context/EpisodeContext';
 import { MilestoneStatus } from '../types/episode';
 import { useTheme } from '../context/ThemeContext';
+import { usePwaInstall } from '../utils/pwaInstall';
 import type { ThemeChoice } from '../utils/theme';
 import {
   Settings,
+  Download,
   SlidersHorizontal,
   Monitor,
   Sun,
@@ -63,6 +65,7 @@ const AppearanceSwitch: React.FC = () => {
 /** The gear at the bottom-left: appearance (System, Light, Dark) and the milestone filter. */
 export const FloatingSettings: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { canPrompt, hint, install } = usePwaInstall();
   const { 
     filterStatus, 
     setFilterStatus, 
@@ -144,6 +147,27 @@ export const FloatingSettings: React.FC = () => {
                 <AppearanceSwitch />
                 <p className="mt-2 text-[11px] text-slate-500">Light, dark, or the same as your device. Saved to your account.</p>
               </div>
+
+              {/* Install: only where the browser can do it (and not once the app is installed) */}
+              {(canPrompt || hint) && (
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2">Install app</span>
+                  {canPrompt ? (
+                    <button
+                      type="button"
+                      onClick={() => void install()}
+                      className="w-full inline-flex items-center justify-center space-x-2 min-h-10 rounded-xl bg-theme-primary hover:bg-theme-dark text-theme-on text-xs font-bold transition"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Install Ovum Treatment Tracker</span>
+                    </button>
+                  ) : (
+                    <p className="text-xs text-slate-600">
+                      {hint === 'ios' ? 'Tap the Share button, then "Add to Home Screen".' : 'In the Safari menu bar choose File, then "Add to Dock".'}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Status Section */}
               <div>
