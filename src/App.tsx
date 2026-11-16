@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { EpisodeProvider, useEpisode } from './context/EpisodeContext';
 import { CompactMast } from './components/CompactMast';
@@ -18,35 +18,12 @@ import { SlidersHorizontal } from 'lucide-react';
 const EpisodeTrackerMain: React.FC = () => {
   const { load, reload, filteredMilestones, filterStatus, selectedMilestone, setSelectedMilestone } = useEpisode();
   const { logout } = useAuth();
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   // Apply Ovum / custom environment theme variables to DOM root
   useEffect(() => {
     const theme = getThemeConfig();
     applyThemeToDocument(theme);
   }, []);
-
-  // Listen for PWA beforeinstallprompt
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallPwa = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-    }
-  };
 
   const isFiltered = filterStatus !== 'all';
 
@@ -126,10 +103,7 @@ const EpisodeTrackerMain: React.FC = () => {
       {/* Milestone details */}
       <MilestoneModal milestone={selectedMilestone} onClose={() => setSelectedMilestone(null)} />
 
-      <PwaInstallPrompt 
-        deferredPrompt={deferredPrompt}
-        onInstall={handleInstallPwa}
-      />
+      <PwaInstallPrompt />
     </div>
   );
 };

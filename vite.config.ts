@@ -18,32 +18,27 @@ export default defineConfig(({ mode }) => {
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'CareJourney - Episode Tracker',
         short_name: 'CareJourney',
         description: 'Patient Episodic Treatment & Milestone Tracker',
+        // A stable id keeps the installed app the same app if start_url ever changes.
+        id: base,
+        start_url: base,
+        scope: base,
         theme_color: '#0f766e',
         background_color: '#f8fafc',
         display: 'standalone',
-        orientation: 'portrait',
+        // Lets Chrome's getInstalledRelatedApps() say this app is already installed (see src/utils/pwaInstall.ts). The url
+        // is read against the manifest's own address, so it needs no host name.
+        related_applications: [{ platform: 'webapp', url: 'manifest.webmanifest' }],
         icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
-          }
+          // Chrome only offers "Install app" with real icons at 192 and 512. Keep "any" and "maskable" as separate
+          // files: one file declared as both gets cropped on Android or shows a white box on desktop.
+          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'pwa-maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
       workbox: {
