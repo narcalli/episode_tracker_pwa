@@ -103,7 +103,7 @@ export const LoginScreen: React.FC = () => {
 
   if (step === 'mobile') {
     return (
-      <AuthShell offerInstall>
+      <AuthShell>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -144,7 +144,7 @@ export const LoginScreen: React.FC = () => {
   }
 
   return (
-    <AuthShell offerInstall>
+    <AuthShell>
       <form
         onSubmit={(e) => {
           e.preventDefault();

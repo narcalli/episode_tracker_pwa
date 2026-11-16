@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { AlertCircle, HeartPulse } from 'lucide-react';
 import { getThemeConfig } from '../../utils/theme';
 import { useTheme } from '../../context/ThemeContext';
-import { PwaInstallPrompt } from '../PwaInstallPrompt';
 
 /** The frame every sign-in screen sits in: the hospital's gradient header and a white card. */
-export const AuthShell: React.FC<{ children: React.ReactNode; offerInstall?: boolean }> = ({ children, offerInstall = false }) => {
+export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const theme = getThemeConfig();
   const { logos } = useTheme();
   const [logoBroken, setLogoBroken] = useState(false);
@@ -39,7 +38,6 @@ export const AuthShell: React.FC<{ children: React.ReactNode; offerInstall?: boo
       <main className="flex-1 px-4 -mt-8 pb-10">
         <div className="max-w-md mx-auto bg-surface rounded-2xl shadow-lg border border-slate-200 p-5 sm:p-6">{children}</div>
       </main>
-      {offerInstall && <PwaInstallPrompt delayMs={0} />}
     </div>
   );
 };

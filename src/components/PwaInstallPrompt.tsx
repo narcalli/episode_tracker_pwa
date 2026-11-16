@@ -3,7 +3,7 @@ import { Download, X, Smartphone } from 'lucide-react';
 import { usePwaInstall } from '../utils/pwaInstall';
 
 const DISMISSED_KEY = 'carejourney.installBannerDismissedAt';
-// How long "Later" / close keeps the banner away. How long it waits before appearing is the delayMs prop.
+// How long after signing in the banner appears, and how long "Later" / close keeps it away.
 const SHOW_AFTER_MS = 30_000;
 const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -16,19 +16,16 @@ const wasDismissedRecently = () => {
   }
 };
 
-/**
- * On the tracker (signed-in patients only, see App.tsx) it appears 30 seconds after they land. On the sign-in screen it
- * is passed delayMs={0}, so a patient is offered the install before they have even signed in.
- */
-export const PwaInstallPrompt: React.FC<{ delayMs?: number }> = ({ delayMs = SHOW_AFTER_MS }) => {
+/** Mounted only for a signed-in patient (see App.tsx), so the 30 seconds count from the moment they land on the tracker. */
+export const PwaInstallPrompt: React.FC = () => {
   const { canPrompt, hint, install } = usePwaInstall();
   const [dismissed, setDismissed] = useState(wasDismissedRecently);
   const [waited, setWaited] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setWaited(true), delayMs);
+    const timer = setTimeout(() => setWaited(true), SHOW_AFTER_MS);
     return () => clearTimeout(timer);
-  }, [delayMs]);
+  }, []);
 
   if (!waited || dismissed || (!canPrompt && !hint)) return null;
 
