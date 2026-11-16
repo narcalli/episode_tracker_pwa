@@ -25,3 +25,6 @@ dist-ssr
 
 # PWA service worker output in dist
 dev-dist
+
+# Netlify CLI link state
+.netlify

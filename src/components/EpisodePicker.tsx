@@ -15,7 +15,7 @@ export const EpisodePicker: React.FC = () => {
         id="episode-picker"
         value={selectedEpisodeId ?? ''}
         onChange={(e) => selectEpisode(e.target.value)}
-        className="w-full min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary/20"
+        className="w-full min-h-11 rounded-xl border border-slate-300 bg-surface px-3 text-sm font-semibold text-slate-800 outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary/20"
       >
         {episodes.map((e, i) => (
           <option key={e.id} value={e.id}>

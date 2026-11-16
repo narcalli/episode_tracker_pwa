@@ -41,7 +41,7 @@ export const ConsentScreen: React.FC = () => {
       <AuthShell>
         <h1 className="text-2xl font-extrabold leading-tight">You&apos;re signed out</h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-500">
-          You need to agree to how we use your data to use CareJourney. You can sign in again whenever you&apos;re ready.
+          You need to agree to how we use your data to use the Ovum Treatment Tracker. You can sign in again whenever you&apos;re ready.
         </p>
         <button className={`${primaryButton} mt-8`} onClick={() => void reload()}>
           Back to sign in

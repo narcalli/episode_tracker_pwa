@@ -39,15 +39,15 @@ export const PwaInstallPrompt: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-40 bg-slate-900 text-white p-4 rounded-2xl shadow-2xl border border-slate-700 animate-in slide-in-from-bottom duration-300">
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-40 bg-night text-white p-4 rounded-2xl shadow-2xl border border-white/10 animate-in slide-in-from-bottom duration-300">
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center text-white shrink-0 shadow-md">
             <Smartphone className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="font-bold text-sm text-white">Install CareJourney App</h4>
-            <p className="text-xs text-slate-300 mt-0.5">
+            <h4 className="font-bold text-sm text-white">Install Ovum Treatment Tracker</h4>
+            <p className="text-xs text-white/70 mt-0.5">
               {hint === 'ios'
                 ? 'Tap the Share button, then "Add to Home Screen".'
                 : hint === 'mac'
@@ -56,7 +56,7 @@ export const PwaInstallPrompt: React.FC = () => {
             </p>
           </div>
         </div>
-        <button onClick={dismiss} aria-label="Close" className="p-1 text-slate-400 hover:text-white rounded-lg transition">
+        <button onClick={dismiss} aria-label="Close" className="p-1 text-white/60 hover:text-white rounded-lg transition">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -65,7 +65,7 @@ export const PwaInstallPrompt: React.FC = () => {
         {canPrompt && (
           <button
             onClick={install}
-            className="flex-1 inline-flex items-center justify-center space-x-1.5 py-2 px-3 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-xl text-xs transition"
+            className="flex-1 inline-flex items-center justify-center space-x-1.5 py-2 px-3 bg-teal-500 hover:bg-teal-400 text-night font-bold rounded-xl text-xs transition"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Install app</span>
@@ -73,7 +73,7 @@ export const PwaInstallPrompt: React.FC = () => {
         )}
         <button
           onClick={dismiss}
-          className="py-2 px-3 bg-white/10 hover:bg-white/20 text-slate-300 font-semibold rounded-xl text-xs transition"
+          className="py-2 px-3 bg-white/10 hover:bg-white/20 text-white/80 font-semibold rounded-xl text-xs transition"
         >
           {canPrompt ? 'Later' : 'Got it'}
         </button>

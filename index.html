@@ -2,19 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#F4F7FA" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="CareJourney" />
+    <meta name="apple-mobile-web-app-title" content="Ovum Treatment Tracker" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <title>CareJourney - Maternity Milestone Tracker</title>
+    <script>
+      // Sets light or dark before the first paint, so a dark-mode patient never sees a white flash. Same rule as
+      // resolveTheme in src/utils/theme.ts: the saved choice wins, otherwise the device's setting.
+      (function () {
+        var t = null;
+        try { t = localStorage.getItem('carejourney.theme'); } catch (e) {}
+        var d = t === 'dark' || (t !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        var r = document.documentElement;
+        r.setAttribute('data-theme', d ? 'dark' : 'light');
+        r.style.colorScheme = d ? 'dark' : 'light';
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute('content', d ? '#262624' : '#F4F7FA');
+      })();
+    </script>
+    <title>Ovum Treatment Tracker</title>
   </head>
-  <body class="bg-slate-50 text-slate-900 font-sans antialiased selection:bg-teal-100 selection:text-teal-900">
+  <body class="bg-canvas text-slate-900 font-sans antialiased selection:bg-teal-100 selection:text-teal-900">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

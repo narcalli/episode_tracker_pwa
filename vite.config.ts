@@ -18,17 +18,17 @@ export default defineConfig(({ mode }) => {
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'CareJourney - Episode Tracker',
-        short_name: 'CareJourney',
+        name: 'Ovum Treatment Tracker',
+        short_name: 'Ovum Tracker',
         description: 'Patient Episodic Treatment & Milestone Tracker',
         // A stable id keeps the installed app the same app if start_url ever changes.
         id: base,
         start_url: base,
         scope: base,
         theme_color: '#0f766e',
-        background_color: '#f8fafc',
+        background_color: '#ffffff',
         display: 'standalone',
         // Lets Chrome's getInstalledRelatedApps() say this app is already installed (see src/utils/pwaInstall.ts). The url
         // is read against the manifest's own address, so it needs no host name.

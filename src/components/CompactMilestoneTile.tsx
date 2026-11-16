@@ -30,7 +30,7 @@ export const CompactMilestoneTile: React.FC<CompactMilestoneTileProps> = ({
           ? 'bg-emerald-50/70 border-emerald-300/80 hover:border-emerald-400'
           : isWindowClosed
           ? 'bg-slate-100/90 border-slate-200 text-slate-500'
-          : 'bg-white border-slate-200/90 hover:border-slate-300 shadow-2xs'
+          : 'bg-surface border-slate-200/90 hover:border-slate-300 shadow-2xs'
       }`}
     >
       {/* Top micro row: status indicator */}

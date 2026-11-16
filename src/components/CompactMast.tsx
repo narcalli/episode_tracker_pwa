@@ -20,14 +20,14 @@ export const CompactMast: React.FC = () => {
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
             {patient.name}
           </h1>
-          <div className="text-[11px] text-emerald-100 font-medium">
+          <div className="text-[11px] text-white/85 font-medium">
             Maternity Care Episode
           </div>
         </div>
 
         {edd && (
           <div className="flex items-center space-x-1.5 bg-black/15 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-white/15 text-xs font-semibold">
-            <Calendar className="w-3.5 h-3.5 text-emerald-200 shrink-0" />
+            <Calendar className="w-3.5 h-3.5 text-white/90 shrink-0" />
             <span>ETD: <strong className="text-white font-bold">{edd}</strong></span>
           </div>
         )}
@@ -35,13 +35,13 @@ export const CompactMast: React.FC = () => {
 
       {/* Row 2: Progress Bar & Status */}
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-xs font-medium text-emerald-100">
+        <div className="flex items-center justify-between text-xs font-medium text-white/85">
           <span>{stats.completed} of {stats.total} Milestones Done</span>
           <span className="font-bold text-white text-xs">{stats.progressPercent}%</span>
         </div>
         <div className="w-full bg-black/25 rounded-full h-2 overflow-hidden p-0.5">
           <div 
-            className="bg-white h-full rounded-full transition-all duration-500 ease-out shadow-xs"
+            className="bg-surface h-full rounded-full transition-all duration-500 ease-out shadow-xs"
             style={{ width: `${Math.max(stats.progressPercent, 4)}%` }}
           />
         </div>

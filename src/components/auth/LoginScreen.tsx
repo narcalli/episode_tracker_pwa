@@ -118,7 +118,7 @@ export const LoginScreen: React.FC = () => {
           <label htmlFor="mobile" className="mt-6 block text-sm font-semibold">
             Mobile number
           </label>
-          <div className="mt-2 flex items-center rounded-xl border border-slate-300 bg-white focus-within:border-theme-primary focus-within:ring-2 focus-within:ring-theme-primary/20">
+          <div className="mt-2 flex items-center rounded-xl border border-slate-300 bg-surface focus-within:border-theme-primary focus-within:ring-2 focus-within:ring-theme-primary/20">
             <span className="border-r border-slate-200 px-4 text-base font-semibold">+91</span>
             <input
               id="mobile"
@@ -169,7 +169,7 @@ export const LoginScreen: React.FC = () => {
         <input
           id="code"
           ref={codeRef}
-          className="mt-2 w-full min-h-[50px] rounded-xl border border-slate-300 bg-white px-4 text-center text-2xl tracking-[0.6em] outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary/20"
+          className="mt-2 w-full min-h-[50px] rounded-xl border border-slate-300 bg-surface px-4 text-center text-2xl tracking-[0.6em] outline-none focus:border-theme-primary focus:ring-2 focus:ring-theme-primary/20"
           inputMode="numeric"
           autoComplete="one-time-code"
           placeholder="••••"

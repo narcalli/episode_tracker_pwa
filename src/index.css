@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* The hospital's colours. --p360-* come from the hospital's branding (src/utils/theme.ts, applyBrand) already adjusted
+   for contrast in each appearance; each has a neutral fallback for a hospital that has set none. The gradient behind
+   the white text on the header is darker than the brand colour in light, and deeper still in dark. */
+:root {
+  --theme-primary: var(--p360-brand, #00897B);
+  --theme-on-primary: var(--p360-on-brand, #FFFFFF);
+  --theme-dark: color-mix(in oklab, var(--theme-primary) 72%, black);
+  --theme-light: color-mix(in oklab, var(--theme-primary) 12%, rgb(var(--surface)));
+  --theme-accent: var(--p360-accent, #E91E63);
+  --theme-gradient-start: color-mix(in oklab, var(--theme-primary) 78%, black);
+  --theme-gradient-end: var(--theme-primary);
+}
+
+[data-theme="dark"] {
+  --theme-primary: var(--p360-brand-dark, var(--p360-brand, #4DB6AC));
+  --theme-on-primary: var(--p360-on-brand-dark, #0B1F1D);
+  --theme-dark: color-mix(in oklab, var(--theme-primary) 55%, white);
+  --theme-light: color-mix(in oklab, var(--theme-primary) 18%, rgb(var(--surface)));
+  --theme-gradient-start: color-mix(in oklab, var(--theme-primary) 38%, black);
+  --theme-gradient-end: color-mix(in oklab, var(--theme-primary) 60%, black);
+}
+
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -17,14 +39,14 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: rgb(var(--slate-100));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: rgb(var(--slate-300));
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgb(var(--slate-400));
 }

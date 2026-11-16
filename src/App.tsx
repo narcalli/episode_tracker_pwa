@@ -1,34 +1,29 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { EpisodeProvider, useEpisode } from './context/EpisodeContext';
 import { CompactMast } from './components/CompactMast';
 import { EpisodePicker } from './components/EpisodePicker';
 import { CompactMilestoneTile } from './components/CompactMilestoneTile';
 import { MilestoneModal } from './components/MilestoneModal';
-import { FloatingFilter } from './components/FloatingFilter';
+import { FloatingSettings } from './components/FloatingSettings';
+import { CareFooter } from './components/CareFooter';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { PatientPicker } from './components/auth/PatientPicker';
 import { ConsentScreen } from './components/auth/ConsentScreen';
 import { LoadingScreen, OfflineScreen } from './components/auth/StatusScreens';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
-import { getThemeConfig, applyThemeToDocument } from './utils/theme';
 import { SlidersHorizontal } from 'lucide-react';
 
 const EpisodeTrackerMain: React.FC = () => {
   const { load, reload, filteredMilestones, filterStatus, selectedMilestone, setSelectedMilestone } = useEpisode();
   const { logout } = useAuth();
 
-  // Apply Ovum / custom environment theme variables to DOM root
-  useEffect(() => {
-    const theme = getThemeConfig();
-    applyThemeToDocument(theme);
-  }, []);
-
   const isFiltered = filterStatus !== 'all';
 
   return (
-    <div className="min-h-screen bg-slate-100/60 pb-24 text-slate-900 font-sans antialiased">
+    <div className="min-h-screen bg-canvas pb-24 text-slate-900 font-sans antialiased">
       <div className="max-w-2xl mx-auto px-3 sm:px-4 pt-3 sm:pt-4">
         {/* Main Mast: Patient Name, Progress Bar, and ETD only */}
         <CompactMast />
@@ -37,12 +32,12 @@ const EpisodeTrackerMain: React.FC = () => {
 
         {/* Active Filter Notification Pill (if filtered) */}
         {isFiltered && (
-          <div className="mb-3 px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs flex items-center justify-between">
+          <div className="mb-3 px-3 py-1.5 bg-slate-900 text-slate-50 rounded-xl text-xs flex items-center justify-between">
             <span className="flex items-center space-x-1.5 font-medium">
               <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-400" />
               <span>Showing {filteredMilestones.length} filtered milestones</span>
             </span>
-            <span className="text-[11px] text-slate-300">Tap filter icon on bottom-left to reset</span>
+            <span className="text-[11px] text-slate-300">Tap the settings button on the bottom-left to change it</span>
           </div>
         )}
 
@@ -53,7 +48,7 @@ const EpisodeTrackerMain: React.FC = () => {
         {load === 'error' && (
           <div role="alert" className="py-12 text-center text-xs text-slate-600">
             <p>We couldn&apos;t load your milestones. Please try again.</p>
-            <button type="button" onClick={() => void reload()} className="mt-3 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold">
+            <button type="button" onClick={() => void reload()} className="mt-3 px-4 py-2 rounded-xl bg-slate-900 text-slate-50 text-xs font-bold">
               Try again
             </button>
           </div>
@@ -85,7 +80,9 @@ const EpisodeTrackerMain: React.FC = () => {
           </>
         )}
 
-        <div className="mt-8 text-center">
+        <CareFooter />
+
+        <div className="mt-6 text-center">
           <button
             type="button"
             onClick={() => void logout()}
@@ -97,7 +94,7 @@ const EpisodeTrackerMain: React.FC = () => {
       </div>
 
       {/* Floating Bottom Navigation Widgets */}
-      <FloatingFilter />
+      <FloatingSettings />
       <FloatingWhatsApp />
 
       {/* Milestone details */}
@@ -133,8 +130,10 @@ const AuthGate: React.FC = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AuthGate />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

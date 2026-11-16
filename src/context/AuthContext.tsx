@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { PatientProfile } from '../types/episode';
+import { useTheme } from './ThemeContext';
 import { api, ApiError, setSignedOutHandler, type Me, type OtpSent, type SignInOutcome } from '../lib/api';
 
 /**
@@ -28,11 +29,13 @@ const phaseOf = (me: Me): AuthPhase => (me.activePatientId === null ? 'choose' :
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [phase, setPhase] = useState<AuthPhase>('loading');
   const [me, setMe] = useState<Me | null>(null);
+  const { syncFromAccount } = useTheme();
 
   const reload = useCallback(async () => {
     try {
       const m = await api.get<Me>('/me');
       setMe(m);
+      syncFromAccount(m.theme);
       setPhase(phaseOf(m));
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -43,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setPhase((p) => (p === 'loading' ? 'offline' : p));
       }
     }
-  }, []);
+  }, [syncFromAccount]);
 
   // The first look at the session: this is the auto sign-in for anyone already signed in to the portal.
   useEffect(() => {

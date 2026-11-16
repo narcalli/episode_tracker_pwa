@@ -60,6 +60,8 @@ export interface Me {
   patients: LinkedPatient[];
   activePatientId: string | null;
   consentRequired: boolean;
+  /** The appearance the patient chose, saved on their account: 'system', 'light' or 'dark'. */
+  theme?: string;
 }
 
 export interface OtpSent {
