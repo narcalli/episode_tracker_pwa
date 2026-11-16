@@ -33,9 +33,11 @@ const writeFlag = (on: boolean) => {
   }
 };
 
-const isStandalone = () =>
+/** Running as an installed app (its own window), not in a browser tab. iPhone says so with navigator.standalone. */
+export const isStandalone = () =>
   typeof window !== 'undefined' &&
-  (window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true);
+  (['standalone', 'minimal-ui', 'fullscreen', 'window-controls-overlay'].some((m) => window.matchMedia(`(display-mode: ${m})`).matches) ||
+    (navigator as any).standalone === true);
 
 let installed = typeof window !== 'undefined' && (isStandalone() || readFlag());
 const setInstalled = (on: boolean) => {

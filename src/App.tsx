@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { EpisodeProvider, useEpisode } from './context/EpisodeContext';
@@ -8,6 +8,7 @@ import { CompactMilestoneTile } from './components/CompactMilestoneTile';
 import { MilestoneModal } from './components/MilestoneModal';
 import { FloatingSettings } from './components/FloatingSettings';
 import { CareFooter } from './components/CareFooter';
+import { recordTrackerOpen } from './utils/trackerViews';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { PatientPicker } from './components/auth/PatientPicker';
@@ -19,6 +20,11 @@ import { SlidersHorizontal } from 'lucide-react';
 const EpisodeTrackerMain: React.FC = () => {
   const { load, reload, filteredMilestones, filterStatus, selectedMilestone, setSelectedMilestone } = useEpisode();
   const { logout } = useAuth();
+
+  // Counted once each time a signed-in patient lands on the tracker (this component mounts only then).
+  useEffect(() => {
+    recordTrackerOpen();
+  }, []);
 
   const isFiltered = filterStatus !== 'all';
 
