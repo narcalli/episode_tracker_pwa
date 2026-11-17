@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { PatientProfile } from '../types/episode';
 import { useTheme } from './ThemeContext';
 import { api, ApiError, setSignedOutHandler, type Me, type OtpSent, type SignInOutcome } from '../lib/api';
@@ -9,9 +9,32 @@ import { api, ApiError, setSignedOutHandler, type Me, type OtpSent, type SignInO
  */
 export type AuthPhase = 'loading' | 'signed_out' | 'choose' | 'consent' | 'ready' | 'offline';
 
+/**
+ * A tracker invite link that could not sign the person in because it was used or ran out: the number it was sent to
+ * (10 digits, without +91), which the sign-in screen fills in and keeps fixed.
+ */
+export interface InviteFallback {
+  mobile: string;
+  reason: 'used' | 'expired';
+}
+
+/** The invite code in the address (?i=…), removed from it at once so it is not bookmarked, shared or sent again. */
+function takeInviteCode(): string | null {
+  const url = new URL(window.location.href);
+  const code = url.searchParams.get('i');
+  if (code === null) return null;
+  url.searchParams.delete('i');
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  return code.trim() || null;
+}
+
+const nationalNumber = (e164: string) => e164.replace(/^\+91/, '').replace(/\D/g, '').slice(-10);
+
 interface AuthContextType {
   phase: AuthPhase;
   me: Me | null;
+  /** Set when the visitor came from a tracker invite link that no longer signs in. */
+  invite: InviteFallback | null;
   /** The patient whose records are open (empty until signed in and chosen). */
   patient: PatientProfile;
   sendCode: (mobile: string) => Promise<OtpSent>;
@@ -29,10 +52,16 @@ const phaseOf = (me: Me): AuthPhase => (me.activePatientId === null ? 'choose' :
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [phase, setPhase] = useState<AuthPhase>('loading');
   const [me, setMe] = useState<Me | null>(null);
+  const [invite, setInvite] = useState<InviteFallback | null>(null);
   const { syncFromAccount } = useTheme();
+  // The invite link being redeemed, if any. Every look at the session waits for it, so the sign-in screen never opens
+  // before the link has signed the person in or said which number it was for (React runs the first effect twice in
+  // development, and a tab switch can also start a look at the session meanwhile).
+  const inviteRedeem = useRef<Promise<void> | null>(null);
 
   const reload = useCallback(async () => {
     try {
+      if (inviteRedeem.current) await inviteRedeem.current;
       const m = await api.get<Me>('/me');
       setMe(m);
       syncFromAccount(m.theme);
@@ -48,8 +77,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [syncFromAccount]);
 
-  // The first look at the session: this is the auto sign-in for anyone already signed in to the portal.
+  // The first look at the session: this is the auto sign-in for anyone already signed in to the portal. Coming from a
+  // tracker invite link (WhatsApp, after the onboarding call), the link signs the patient in first; a link that was used
+  // or ran out leaves the sign-in screen with its number filled in.
   useEffect(() => {
+    // Taken from the address once, synchronously, so a second run of this effect finds no code and just waits for it.
+    const code = takeInviteCode();
+    if (code) {
+      inviteRedeem.current = api
+        .post('/auth/invite/redeem', { code })
+        .then(() => undefined)
+        .catch((e: unknown) => {
+          const mobile = e instanceof ApiError && typeof e.body.mobile === 'string' ? nationalNumber(e.body.mobile) : '';
+          if (mobile.length === 10 && e instanceof ApiError && (e.code === 'INVITE_USED' || e.code === 'INVITE_EXPIRED')) {
+            setInvite({ mobile, reason: e.code === 'INVITE_USED' ? 'used' : 'expired' });
+          }
+        });
+    }
     void reload();
   }, [reload]);
 
@@ -106,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [me]);
 
   return (
-    <AuthContext.Provider value={{ phase, me, patient, sendCode, verifyCode, choosePatient, reload, logout }}>
+    <AuthContext.Provider value={{ phase, me, invite, patient, sendCode, verifyCode, choosePatient, reload, logout }}>
       {children}
     </AuthContext.Provider>
   );

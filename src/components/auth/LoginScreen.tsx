@@ -41,11 +41,15 @@ function verifyError(e: unknown): string {
   return 'Something went wrong. Please try again.';
 }
 
-/** Mobile number, then a one-time code on WhatsApp: the only way in for a patient. */
+/**
+ * Mobile number, then a one-time code on WhatsApp: the way in for a patient without a working invite link. Coming from a
+ * tracker invite link that was used or ran out, the number it was sent to is filled in and can't be changed.
+ */
 export const LoginScreen: React.FC = () => {
-  const { sendCode, verifyCode } = useAuth();
+  const { sendCode, verifyCode, invite } = useAuth();
+  const locked = invite !== null;
   const [step, setStep] = useState<'mobile' | 'code'>('mobile');
-  const [mobile, setMobile] = useState('');
+  const [mobile, setMobile] = useState(invite?.mobile ?? '');
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,21 +68,42 @@ export const LoginScreen: React.FC = () => {
     if (step === 'code') codeRef.current?.focus();
   }, [step]);
 
-  async function send() {
+  /**
+   * `auto`: sent by itself for an invite link that no longer signs in, not by the person tapping the button. `number` is
+   * passed then, because the field may not show it yet in the same render.
+   */
+  async function send(auto = false, number = digits) {
     setBusy(true);
     setError(null);
     try {
-      const r = await sendCode(digits);
+      const r = await sendCode(number);
       setResendIn(r.resendAfterSeconds);
       setCode('');
       setStep('code');
     } catch (e) {
-      if (e instanceof ApiError && e.code === 'TOO_SOON' && step === 'code') setResendIn(Number(e.body.retryAfterSeconds));
+      if (e instanceof ApiError && e.code === 'TOO_SOON' && (step === 'code' || auto)) {
+        // A code went to this number moments ago (the link opened twice): it still works, so ask for it.
+        setResendIn(Number(e.body.retryAfterSeconds));
+        setStep('code');
+        if (auto) return;
+      }
       setError(sendError(e));
     } finally {
       setBusy(false);
     }
   }
+
+  // Coming from an invite link that was used or ran out: the number is known, so the code goes out at once and the
+  // person lands on the code step. Once only, even when React runs effects twice in development.
+  // The invite may arrive after this screen opened: fill the number then, whenever it comes.
+  const autoSent = useRef(false);
+  useEffect(() => {
+    if (!invite) return;
+    setMobile(invite.mobile);
+    if (autoSent.current || invite.mobile.length !== 10) return;
+    autoSent.current = true;
+    void send(true, invite.mobile);
+  }, [invite]);
 
   async function verify() {
     setBusy(true);
@@ -112,7 +137,9 @@ export const LoginScreen: React.FC = () => {
         >
           <h1 className="text-2xl font-extrabold leading-tight">Sign in</h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-500">
-            Enter your registered mobile number. We&apos;ll send you a one-time code on WhatsApp.
+            {invite
+              ? `Your tracker link ${invite.reason === 'used' ? 'has already been used' : 'has expired'}. We'll send a one-time code on WhatsApp to the number it was sent to.`
+              : <>Enter your registered mobile number. We&apos;ll send you a one-time code on WhatsApp.</>}
           </p>
 
           <label htmlFor="mobile" className="mt-6 block text-sm font-semibold">
@@ -128,8 +155,12 @@ export const LoginScreen: React.FC = () => {
               placeholder="98765 43210"
               maxLength={11}
               value={mobile}
-              onChange={(e) => setMobile(e.target.value.replace(/[^\d ]/g, ''))}
-              autoFocus
+              readOnly={locked}
+              aria-readonly={locked}
+              onChange={(e) => {
+                if (!locked) setMobile(e.target.value.replace(/[^\d ]/g, ''));
+              }}
+              autoFocus={!locked}
             />
           </div>
 
@@ -151,16 +182,26 @@ export const LoginScreen: React.FC = () => {
           if (code.length === OTP_LENGTH) void verify();
         }}
       >
-        <button type="button" className="mb-5 inline-flex min-h-10 items-center text-sm font-semibold text-theme-primary" onClick={changeNumber}>
-          <ChevronLeft className="w-4 h-4" /> Back
-        </button>
+        {/* From an invite link the number is fixed, so there is nothing to go back to. */}
+        {!locked && (
+          <button type="button" className="mb-5 inline-flex min-h-10 items-center text-sm font-semibold text-theme-primary" onClick={changeNumber}>
+            <ChevronLeft className="w-4 h-4" /> Back
+          </button>
+        )}
         <h1 className="text-2xl font-extrabold leading-tight">Enter the code</h1>
+        {invite && (
+          <p className="mt-2 text-sm leading-relaxed text-slate-500">
+            Your tracker link {invite.reason === 'used' ? 'has already been used' : 'has expired'}, so please confirm it&apos;s you.
+          </p>
+        )}
         <p className="mt-2 text-sm leading-relaxed text-slate-500">We have sent a {OTP_LENGTH}-digit code on WhatsApp to:</p>
         <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3">
           <span className="text-base font-bold">+91 {digits}</span>
-          <button type="button" className="text-sm font-semibold text-theme-primary" onClick={changeNumber}>
-            Change number
-          </button>
+          {!locked && (
+            <button type="button" className="text-sm font-semibold text-theme-primary" onClick={changeNumber}>
+              Change number
+            </button>
+          )}
         </div>
 
         <label htmlFor="code" className="mt-6 block text-sm font-semibold">
